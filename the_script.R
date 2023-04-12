@@ -1,5 +1,7 @@
-#these are all the packages I will use in this script. Make sure you ask R to install them before you try anything (If you're Mr Ferragne I know you must have them already)
+#these are all the packages I will use in this script
 install.packages("tm")
+install.packages("wordcloud")
+install.packages("SnowballC")
 install.packages("tidytext")
 install.packages("magrittr")
 install.packages("dplyr")
@@ -8,11 +10,12 @@ install.packages("tidyr")
 install.packages("purrr")
 install.packages("readr")
 install.packages("textdata")
-install.packages("ggplot2")
 
 
 #don't forget to load the packages or nothing will work
 library(tm)
+library(wordcloud)
+library(SnowballC)
 library(tidytext)
 library(magrittr)
 library(dplyr)
@@ -23,15 +26,17 @@ library(readr)
 library(textdata)
 library(ggplot2)
 
+
+
+
+
 #we load our file in R 
+ 
+  
 text = readLines("lotr_fellowship.txt")
-
-#we create a dataframe for our raw text
 text_df <- data.frame(text)
-
-#this code creates a new dataframe that sorts the text into sentences with the function unnest_tokens(output, input, token) 
+#this code creates a new dataframe that sorts the text into sentences
 sentences <- text_df %>% unnest_tokens(sentence, text, token = "sentences")
-
 #this code creates a new dataframe that sorts the sentences into words
 words <- sentences %>% unnest_tokens(word, sentence, token = "words")
 
@@ -39,7 +44,7 @@ words <- sentences %>% unnest_tokens(word, sentence, token = "words")
 #this code will apply cbindpad to merged_data in order to merge sentences and words into 1 dataframe while either merging the common rows together or turn the empty rows as NAs
 merged_data <- cbindPad(sentences, words)
 
-#this code will give me the sentiments scores for each sentence. I used the nrc lexicon because it has quite a nice range of different sentiments. 
+#this code will give me the sentiments scores for each sentence
 nrc <- get_sentiments("nrc")
 sentiments_sentences <- merged_data %>% inner_join(nrc, by = "word") %>% group_by(sentence, sentiment) %>% summarize(count = n())
 
@@ -55,9 +60,14 @@ ggplot(sentiments_sentences, aes(x = sentiment, y = count, color = id, size = ab
 most_present_sentiment <- with(sentiments_sentences, sentiment[which.max(count)])
 show(most_present_sentiment)
 
+#to get the percentage of the sentiments
+sentiment_percentages <- sentiments_sentences %>%  group_by(sentiment) %>% summarise(percentage = sum(count)/sum(sentiments_sentences$count)*100)
 
-#For Pippin and Gandalf interactions (it's the same method) 
+#to plot the sentiment distribution in a historigram
+ggplot(sentiment_percentages, aes(x = sentiment, y = percentage, fill = sentiment)) + geom_bar(stat = "identity") + scale_fill_manual(values = c("red", "blue", "purple", "orange","green", "pink", "brown","grey", "darkblue","darkgreen")) + labs(title = "Sentiment distribution", x = "Sentiment", y = "Percentage")
 
+#For Pippin and Gandalf interactions
+#this code loads the text 
 text_new = readLines("lotr_pippin_gandalf.txt")
 text_df_new <- data.frame(text_new)
 sentences_new <- text_df_new %>% unnest_tokens(sentence, text_new, token = "sentences")
